@@ -1,0 +1,34 @@
+# Notices and attribution
+
+This project is an unofficial local-backport and rebuild kit. It is not
+endorsed by, affiliated with, or maintained by GNOME, Ubuntu, Canonical, or the
+GNOME Keyring maintainers.
+
+## GNOME Keyring-derived patch
+
+`patches/0001-escape-multiline-textual-secrets.patch` targets the GNOME Keyring
+files `pkcs11/secret-store/gkm-secret-textual.c` and
+`pkcs11/secret-store/test-secret-textual.c` from the Ubuntu source package
+`gnome-keyring 46.1-2ubuntu0.2`.
+
+The relevant source files carry copyright notices including:
+
+- Copyright (C) 2007, 2009 Stefan Walter
+- Copyright (C) 2009 Stefan Walter
+
+Those source-file headers allow redistribution and modification under the GNU
+Library/Lesser General Public License, version 2 or later. This repository
+therefore carries the original `LGPL-2.0-or-later` grant. The included
+`LICENSES/LGPL-2.1-or-later.txt` is the GNU Lesser GPL v2.1 text, the documented
+successor to the GNU Library GPL v2 and an option under that grant.
+
+The behavioral change matches the intent of [GNOME gnome-keyring MR !111](https://gitlab.gnome.org/GNOME/gnome-keyring/-/merge_requests/111).
+The upstream project remains authoritative for upstream status, review, and
+future releases.
+
+## Verification key
+
+`keys/gnome-keyring-46.1-source-signer.asc` is the public key used by the
+source fetch script to verify the documented signed Debian source control file.
+It identifies the expected source-package signer by fingerprint; no secret key
+or account credential is included.

@@ -1,0 +1,16 @@
+# Generated or machine-local material: do not publish.
+/artifacts/
+/dist/
+/.build/
+/source/
+/.work/
+/.verify-clean-source/
+
+# Keyring and runtime data must never belong in this repository.
+*.keyring
+*.jsonl
+*.state
+
+# Python test bytecode is generated locally.
+__pycache__/
+*.py[cod]
