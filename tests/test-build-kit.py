@@ -171,6 +171,25 @@ class TargetContractTests(unittest.TestCase):
             self.assertIn(str(root / ".build" / "ubuntu24.04") + ":/build:rw", containers[1])
             self.assertIn("ubuntu24.04", containers[1])
 
+    def test_container_provisions_the_callers_uid_and_gid(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = KIT.load_target("ubuntu24.04")
+            with mock.patch.object(KIT, "ROOT", root), \
+                    mock.patch.object(KIT.os, "getuid", return_value=1001), \
+                    mock.patch.object(KIT.os, "getgid", return_value=1002), \
+                    mock.patch.object(KIT.subprocess, "run") as run:
+                KIT.container_build(target, root / "dist")
+            commands = [call.args[0] for call in run.call_args_list]
+            self.assertIn("BUILD_UID=1001", commands[0])
+            self.assertIn("BUILD_GID=1002", commands[0])
+            image = commands[0][commands[0].index("--tag") + 1]
+            self.assertTrue(image.endswith("-uid1001-gid1002"))
+            for command in commands:
+                if command[:2] == ["docker", "run"]:
+                    self.assertIn("1001:1002", command)
+                    self.assertIn(image, command)
+
 
 class DocumentationTests(unittest.TestCase):
     def test_readme_introduction_explains_failure_prevention_and_limit(self):

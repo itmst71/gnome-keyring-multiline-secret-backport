@@ -50,4 +50,18 @@ RUN rm -f /etc/apt/sources.list.d/* \
       xsltproc \
  && rm -rf /var/lib/apt/lists/*
 
+# D-Bus requires an NSS entry, not just Docker's numeric --user mapping.
+# Add only missing container-local identities; never mount host account files.
+ARG BUILD_UID=1000
+ARG BUILD_GID=1000
+RUN case "$BUILD_UID" in ''|*[!0-9]*) exit 1;; esac \
+ && case "$BUILD_GID" in ''|*[!0-9]*) exit 1;; esac \
+ && { getent group "$BUILD_GID" >/dev/null \
+      || printf 'backport-builder-%s:x:%s:\n' "$BUILD_GID" "$BUILD_GID" >> /etc/group; } \
+ && { getent passwd "$BUILD_UID" >/dev/null \
+      || printf 'backport-builder-%s:x:%s:%s:Local build user:/build/home:/bin/false\n' \
+           "$BUILD_UID" "$BUILD_UID" "$BUILD_GID" >> /etc/passwd; } \
+ && getent passwd "$BUILD_UID" >/dev/null \
+ && getent group "$BUILD_GID" >/dev/null
+
 WORKDIR /work

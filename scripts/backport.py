@@ -163,19 +163,21 @@ def container_build(target, dist_dir):
     (cache / "tmp").mkdir(exist_ok=True)
     (cache / "home").mkdir(exist_ok=True)
     dist_dir.mkdir(parents=True, exist_ok=True)
-    image = "gnome-keyring-local-builder:" + target["id"]
+    uid, gid = os.getuid(), os.getgid()
+    image = f"gnome-keyring-local-builder:{target['id']}-uid{uid}-gid{gid}"
     subprocess.run([
         "docker", "build", "--pull", "--platform", "linux/amd64",
         "--build-arg", "BASE_IMAGE=" + target["base_image"],
         "--build-arg", "SUITE=" + target["suite"],
         "--build-arg", "UBUNTU_SNAPSHOT=" + target["snapshot"],
+        "--build-arg", f"BUILD_UID={uid}", "--build-arg", f"BUILD_GID={gid}",
         "--tag", image, str(ROOT / "container"),
     ], check=True, timeout=1800)
     for action in ("fetch", "build"):
         name = "backport-" + target["id"] + "-" + uuid.uuid4().hex[:12]
         command = [
             "docker", "run", "--rm", "--name", name, "--platform", "linux/amd64",
-            "--user", f"{os.getuid()}:{os.getgid()}",
+            "--user", f"{uid}:{gid}",
             "--env", "HOME=/build/home", "--env", "TMPDIR=/build/tmp",
             "--env", "PYTHONDONTWRITEBYTECODE=1", "--env", "LC_ALL=C.UTF-8",
             "--volume", str(ROOT) + ":/work:ro",

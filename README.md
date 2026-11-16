@@ -72,6 +72,9 @@ packages are never overwritten and failed build directories are retained.
 Prerequisites: Linux, Python 3.10 or later, Docker with a working daemon, and
 network access for image/dependency/source downloads. Run from the repository
 root as your normal user; the package build runs as that user's UID/GID.
+The builder adds missing container-local user/group entries for those IDs so
+D-Bus tests also work for non-1000 users, including CI runners. Host account
+files are never mounted or copied into the image.
 
 ```sh
 # Select the target explicitly; there is no default.
