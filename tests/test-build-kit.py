@@ -164,6 +164,7 @@ class TargetContractTests(unittest.TestCase):
             self.assertEqual(image_build[:2], ["docker", "build"])
             self.assertIn("BASE_IMAGE=" + target["base_image"], image_build)
             self.assertIn("SUITE=noble", image_build)
+            self.assertEqual(run.call_args_list[0].kwargs["timeout"], 45 * 60)
             containers = [command for command in commands if command[:2] == ["docker", "run"]]
             self.assertEqual(len(containers), 2)
             self.assertIn("--network=none", containers[1])

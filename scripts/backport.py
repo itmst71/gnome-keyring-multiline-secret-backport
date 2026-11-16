@@ -172,7 +172,7 @@ def container_build(target, dist_dir):
         "--build-arg", "UBUNTU_SNAPSHOT=" + target["snapshot"],
         "--build-arg", f"BUILD_UID={uid}", "--build-arg", f"BUILD_GID={gid}",
         "--tag", image, str(ROOT / "container"),
-    ], check=True, timeout=1800)
+    ], check=True, timeout=2700)
     for action in ("fetch", "build"):
         name = "backport-" + target["id"] + "-" + uuid.uuid4().hex[:12]
         command = [
