@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXPECTED_FILES = {
+    ".github/workflows/build.yml",
     ".gitignore",
     "CONTRIBUTING.md",
     "LICENSE",
@@ -17,12 +18,19 @@ EXPECTED_FILES = {
     "LICENSES/MIT.txt",
     "NOTICE",
     "README.md",
+    "README.ja.md",
     "SECURITY.md",
     "container/Dockerfile",
     "keys/gnome-keyring-46.1-source-signer.asc",
+    "keys/gnome-keyring-50.0-source-signer.asc",
     "patches/0001-escape-multiline-textual-secrets.patch",
     "scripts/build-local-package.sh",
+    "scripts/backport.py",
+    "scripts/build.sh",
     "scripts/fetch-source.sh",
+    "targets/ubuntu24.04.json",
+    "targets/ubuntu26.04.json",
+    "tests/test-build-kit.py",
     "tests/test-keyfile-multiline-roundtrip.c",
     "tests/verify-public-tree.py",
 }
@@ -115,6 +123,8 @@ def main() -> None:
         "not affiliated with GNOME or Ubuntu",
         "does not distribute binaries",
         "46.1-2ubuntu0.2",
+        "50.0-1",
+        "English takes precedence",
         "+local1",
         "GNOME gnome-keyring MR !111",
     ):
@@ -143,7 +153,7 @@ def main() -> None:
     if patch.count(old) != 1 or patch.count(new) != 1:
         fail("patch does not contain exactly the intended production replacement")
 
-    for relative in ("scripts/fetch-source.sh", "scripts/build-local-package.sh"):
+    for relative in ("scripts/fetch-source.sh", "scripts/build-local-package.sh", "scripts/build.sh"):
         mode = (ROOT / relative).stat().st_mode
         if not mode & stat.S_IXUSR:
             fail(f"script is not owner-executable: {relative}")

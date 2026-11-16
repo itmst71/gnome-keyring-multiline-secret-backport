@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: MIT
-# Disposable builder for the Ubuntu 24.04 gnome-keyring local backport.
-FROM ubuntu@sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316
+# Shared disposable builder. scripts/build.sh supplies the selected target pins.
+ARG BASE_IMAGE=ubuntu@sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316
+FROM ${BASE_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UBUNTU_SNAPSHOT=20260828T000000Z
-ARG HOST_UID=1000
-ARG HOST_GID=1000
+ARG SUITE=noble
 
 RUN rm -f /etc/apt/sources.list.d/* \
  && printf '%s\n' \
-      "deb [check-valid-until=no] https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/ noble main universe" \
-      "deb [check-valid-until=no] https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/ noble-updates main universe" \
+      "deb [check-valid-until=no] https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/ ${SUITE} main universe" \
+      "deb [check-valid-until=no] https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/ ${SUITE}-updates main universe" \
       > /etc/apt/sources.list \
  && apt-get -o Acquire::Check-Valid-Until=false \
       -o Acquire::https::Verify-Peer=false \
@@ -43,12 +43,11 @@ RUN rm -f /etc/apt/sources.list.d/* \
       libsystemd-dev \
       libtasn1-6-dev \
       libtasn1-bin \
+      meson \
       openssh-client \
       python3 \
       systemd-dev \
       xsltproc \
  && rm -rf /var/lib/apt/lists/*
-
-RUN mkdir /work && chown "${HOST_UID}:${HOST_GID}" /work
 
 WORKDIR /work

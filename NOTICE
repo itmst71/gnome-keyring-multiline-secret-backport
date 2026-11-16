@@ -9,7 +9,7 @@ GNOME Keyring maintainers.
 `patches/0001-escape-multiline-textual-secrets.patch` targets the GNOME Keyring
 files `pkcs11/secret-store/gkm-secret-textual.c` and
 `pkcs11/secret-store/test-secret-textual.c` from the Ubuntu source package
-`gnome-keyring 46.1-2ubuntu0.2`.
+`gnome-keyring 46.1-2ubuntu0.2` and `gnome-keyring 50.0-1`.
 
 The relevant source files carry copyright notices including:
 
@@ -26,9 +26,9 @@ The behavioral change matches the intent of [GNOME gnome-keyring MR !111](https:
 The upstream project remains authoritative for upstream status, review, and
 future releases.
 
-## Verification key
+## Verification keys
 
-`keys/gnome-keyring-46.1-source-signer.asc` is the public key used by the
-source fetch script to verify the documented signed Debian source control file.
-It identifies the expected source-package signer by fingerprint; no secret key
-or account credential is included.
+`keys/gnome-keyring-46.1-source-signer.asc` and
+`keys/gnome-keyring-50.0-source-signer.asc` are the public keys used to verify
+the respective signed Debian source control files. Each target profile pins
+its expected signer fingerprint; no secret key or account credential is included.

@@ -1,0 +1,27 @@
+name: Build and test pinned targets
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ubuntu24.04, ubuntu26.04]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Offline build-tool and documentation tests
+        run: python3 -B tests/test-build-kit.py -v
+      - name: Source-only publication boundary
+        run: python3 -B tests/verify-public-tree.py
+      - name: Build and run the package test suite
+        run: sh scripts/build.sh "${{ matrix.target }}"
+      # Binary artifacts are intentionally not uploaded or published.

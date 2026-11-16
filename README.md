@@ -1,12 +1,23 @@
 # GNOME Keyring multiline textual-secret backport
 
-> **Unofficial local backport kit for Ubuntu 24.04.** It is not affiliated with GNOME or Ubuntu, does not distribute binaries, and is not an official security update.
+**English (canonical)** | [日本語](README.ja.md)
 
-This repository documents and rebuilds a narrowly scoped patch for the Ubuntu
-`gnome-keyring` source version `46.1-2ubuntu0.2`. It is intended for local,
-operator-controlled builds only. Verify the exact source package and build a
-package for your own system; do not treat a package built by somebody else as a
-trusted release artifact.
+English takes precedence if the translations differ.
+
+**Why this exists:** affected GNOME Keyring versions can write an unreadable
+keyring when an application stores a **multiline secret in a passwordless
+keyring**. It may still work in the current session, then fail to load at the
+next login or daemon start, making saved credentials appear to have disappeared.
+This kit builds a narrowly patched Ubuntu package that escapes those values
+correctly to prevent that corruption. **It does not repair an already damaged
+keyring or recover missing credentials.**
+
+> **Unofficial local backport kit for Ubuntu 24.04 and 26.04.** It is not affiliated with GNOME or Ubuntu, does not distribute binaries, and is not an official security update.
+
+One repository maintains the shared patch, tests and build tooling; explicit
+target profiles separate the Ubuntu source versions and build environments.
+Build for your own system. Do not use a package built for a different Ubuntu
+release or treat somebody else's build as a trusted release artifact.
 
 ## Scope
 
@@ -30,22 +41,26 @@ This repository intentionally contains no owner-local D-Bus or Secret Service
 integration helper. Its synthetic GLib test proves serialization semantics only;
 it is not evidence about any particular user's keyring or session persistence.
 
-## Pinned inputs
+## Targets and pinned inputs
 
-| Input | Value |
-|---|---|
-| Ubuntu source version | `46.1-2ubuntu0.2` |
-| Original source SHA-256 | `b1d3ae9132ff2f8b3f25a190790892968e3d0acf952a487e40f644a8550ce3f6` |
-| Debian delta SHA-256 | `8ba42f582bbad08b90161325da3cc60d6962929d9c9c9e8d25742d5e1806c171` |
-| Signed `.dsc` SHA-256 | `4478823a8403d4aa41861a706596ea2dbeb8b1144efdc5880349d80a6844c1de` |
-| Source signer fingerprint | `BC27F8FEF77F7207A7BA08BE0D0246F38220EDA6` |
-| Docker base image | `ubuntu@sha256:1e0a86e57d247923571b75e0aaf48a1449cf8c543d51fb3e07a4a7d7bfa79316` |
-| Ubuntu snapshot | `20260828T000000Z` |
+| Target | Ubuntu | Source version | Local package version |
+|---|---|---|---|
+| `ubuntu24.04` | 24.04 / noble | `46.1-2ubuntu0.2` | `46.1-2ubuntu0.2+local1` |
+| `ubuntu26.04` | 26.04 / resolute | `50.0-1` | `50.0-1ubuntu0.0+local1` |
 
-`scripts/fetch-source.sh` downloads only over HTTPS, verifies all three hashes,
-and validates the signed Debian source control file with the pinned public
-source-signer key. The Docker image uses a digest-pinned base and a timestamped
-Ubuntu snapshot rather than a floating image tag or live package indices.
+Only **amd64** is qualified. An Ubuntu release's support lifetime does not mean
+every later source revision is covered by this patch.
+
+The [24.04 profile](targets/ubuntu24.04.json) and
+[26.04 profile](targets/ubuntu26.04.json) are the authoritative lists of source
+URLs, SHA-256 hashes, signer fingerprints, base-image digests and snapshot dates.
+The shared fetch/build code verifies all three source hashes and the signed
+`.dsc` using only the selected public signer key in a temporary keyring. It
+repeats authentication on the copied build inputs before extraction.
+
+Build inputs are pinned; **byte-for-byte reproducible output is not claimed**.
+Targets have separate caches, work directories and output directories. Existing
+packages are never overwritten and failed build directories are retained.
 
 > The minimal base image has no CA certificate bundle. The Dockerfile disables
 > HTTPS peer verification only for the first package-index update and
@@ -54,88 +69,117 @@ Ubuntu snapshot rather than a floating image tag or live package indices.
 
 ## Rebuild and package test
 
-These commands require Docker access. They create a neutral local package with
-version suffix `+local1` but do **not** install it.
+Prerequisites: Linux, Python 3.10 or later, Docker with a working daemon, and
+network access for image/dependency/source downloads. Run from the repository
+root as your normal user; the package build runs as that user's UID/GID.
 
 ```sh
-# Build the disposable, pinned Ubuntu builder.
-docker build --pull --no-cache \
-  -t gnome-keyring-local-builder:ubuntu24.04 \
-  container
-
-# Fetch and authenticate the exact Ubuntu source package inputs.
-docker run --rm \
-  -v "$PWD:/work:rw" -w /work \
-  gnome-keyring-local-builder:ubuntu24.04 \
-  sh scripts/fetch-source.sh
-
-# Apply the patch and run Debian's package test suite.
-docker run --rm \
-  -v "$PWD:/work:rw" -w /work \
-  --user "$(id -u):$(id -g)" \
-  gnome-keyring-local-builder:ubuntu24.04 \
-  sh scripts/build-local-package.sh
+# Select the target explicitly; there is no default.
+sh scripts/build.sh ubuntu24.04
+sh scripts/build.sh ubuntu26.04
 ```
 
-The build script runs `dpkg-buildpackage -b -uc -us`; do not use a package
-built with `DEB_BUILD_OPTIONS=nocheck`. It writes locally generated packages to
-an ignored `dist/` directory. Do not commit, publish, or upload those files.
-Inspect the locally generated package before using it:
+Each command builds its pinned container, authenticates the source, applies
+the shared patch and runs `dpkg-buildpackage -b -uc -us -j4`, including the
+distribution's package test suite and the added multiline round-trip test.
+`nocheck` is rejected. The package-build container has no network, the checkout
+is mounted read-only, and no desktop session bus or real keyring is mounted.
+Nothing is installed on the host and no service is restarted.
+
+Only the resulting `gnome-keyring` package is copied to `dist/<target>/`.
+Other build outputs and logs remain under `.build/<target>/work/`.
+Do not commit, publish or upload generated files. Inspect the package:
 
 ```sh
-dpkg-deb -f dist/gnome-keyring_46.1-2ubuntu0.2+local1_amd64.deb \
+dpkg-deb -f dist/ubuntu26.04/gnome-keyring_50.0-1ubuntu0.0+local1_amd64.deb \
   Package Version Architecture
-sha256sum dist/*.deb
+sha256sum dist/ubuntu26.04/*.deb
 ```
 
-## Synthetic regression check
+For a rebuild without overwriting an earlier package, use a new output directory:
 
-The included check uses a fixed non-secret multiline value. It is independent
-of Secret Service and does not access a keyring.
+```sh
+sh scripts/build.sh ubuntu26.04 --dist-dir "$PWD/dist/ubuntu26.04-rerun"
+```
+
+The lower-level `scripts/fetch-source.sh` and `scripts/build-local-package.sh`
+also require a target; their old no-argument invocation is no longer supported.
+Use `python3 scripts/backport.py --help` for source/work/output path options.
+The direct build command refuses a mismatched Ubuntu release or architecture.
+
+## Tests and publication checks
+
+The offline build-tool and bilingual-documentation tests require Python; the
+version-order check additionally uses `dpkg` and is skipped when it is absent.
+Run the publication check on a source-only tree, before creating `.build/` or
+`dist/`; it deliberately rejects generated/private material even when ignored
+by Git. CI runs this check before building both targets in a matrix; configured
+CI is not a claim that a particular unpublished commit has passed hosted CI.
+
+```sh
+python3 -B tests/test-build-kit.py -v
+python3 -B tests/verify-public-tree.py
+```
+
+The standalone C check uses a fixed non-secret multiline value. It requires a
+C compiler and GLib development files, is independent of Secret Service, and
+does not access a keyring. Run it in either matching builder:
 
 ```sh
 # Expected RED: raw GKeyFile writing aborts on a reload attempt.
+test_dir=$(mktemp -d)
+ulimit -c 0
 gcc -std=c11 -Wall -Wextra -Werror tests/test-keyfile-multiline-roundtrip.c \
-  $(pkg-config --cflags --libs glib-2.0) -o /tmp/keyfile-test-raw
-/tmp/keyfile-test-raw
+  $(pkg-config --cflags --libs glib-2.0) -o "$test_dir/keyfile-test-raw"
+"$test_dir/keyfile-test-raw"
 
 # GREEN: the escaping writer round-trips the same value.
 gcc -std=c11 -Wall -Wextra -Werror -DUSE_ESCAPING_WRITER \
   tests/test-keyfile-multiline-roundtrip.c \
-  $(pkg-config --cflags --libs glib-2.0) -o /tmp/keyfile-test-escaped
-/tmp/keyfile-test-escaped
-
-# Assert that this repository remains a minimal, safe publication tree.
-python3 tests/verify-public-tree.py
+  $(pkg-config --cflags --libs glib-2.0) -o "$test_dir/keyfile-test-escaped"
+"$test_dir/keyfile-test-escaped"
 ```
 
-The first command is deliberately expected to fail. Run the second and third
-commands only after observing that RED result.
+The raw test is deliberately expected to fail. Run the escaped test only after
+observing that RED result. These tests do not establish persistence across a
+real desktop logout/login.
 
 ## Installation and rollback
 
-Installation is deliberately manual and outside this repository's support
-scope. On a compatible Ubuntu system, after inspecting your local package:
+Installation is deliberately manual. Preserve a private backup of your existing
+keyrings first, inspect your package, and use **only the matching Ubuntu target**.
+Example for Ubuntu 26.04:
 
 ```sh
-sudo dpkg -i dist/gnome-keyring_46.1-2ubuntu0.2+local1_amd64.deb
+sudo apt install ./dist/ubuntu26.04/gnome-keyring_50.0-1ubuntu0.0+local1_amd64.deb
 ```
 
 Use a normal logout/login so the desktop session starts the installed daemon.
 A user-service restart in an already running session is not equivalent to a
 fresh desktop login and is not an appropriate persistence proof.
 
-To return to Ubuntu's documented base version when it remains available:
+To return to Ubuntu's documented base version when it remains available
+(this restores the affected writer, not damaged data):
 
 ```sh
-sudo apt install --reinstall --allow-downgrades gnome-keyring=46.1-2ubuntu0.2
+sudo apt install --reinstall --allow-downgrades gnome-keyring=50.0-1
 ```
 
-A later official Ubuntu revision such as `46.1-2ubuntu0.3` sorts above the
-local `+local1` package and can replace it through normal APT upgrade. Do not
-place the package on hold. Before applying this patch to another Ubuntu source
-revision, confirm that the official source has not already adopted the fix and
-re-run the complete package test suite.
+For 24.04, use its table entry and corresponding `dist/ubuntu24.04/` package.
+The local versions sort above their base packages but below the next ordinary
+Ubuntu security revisions (`46.1-2ubuntu0.3` and `50.0-1ubuntu0.1`, respectively).
+These are ordering examples, not claims that those revisions are available.
+The 26.04 `ubuntu0.0+local1` suffix deliberately avoids `50.0-1+local1`, which
+would incorrectly outrank `50.0-1ubuntu0.1`. Not every possible official rebuild
+necessarily sorts above a local suffix: inspect `apt-cache policy gnome-keyring`
+and rebase when needed. An official update or OS upgrade can also replace the
+fix with an affected version. **Recheck after package or distribution upgrades.**
+Do not place the package on an indefinite hold and block security updates.
+Before adding a source revision, check whether the official source already
+contains the fix, then update the target pins and rerun the complete package
+tests. Keep both maintained targets in the same reviewed change when shared
+tooling or the patch changes. Existing corruption needs a separate recovery
+procedure; do not delete a keyring merely because it is absent from the UI.
 
 ## Publication boundary
 

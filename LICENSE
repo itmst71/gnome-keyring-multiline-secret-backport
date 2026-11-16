@@ -9,13 +9,13 @@ This repository contains materials under two licenses:
   [`LICENSES/LGPL-2.1-or-later.txt`](LICENSES/LGPL-2.1-or-later.txt) contains
   the LGPL v2.1 text, the documented successor to the GNU Library GPL v2, and
   is one option permitted by that license grant.
-- `README.md`, `NOTICE`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`,
-  `container/Dockerfile`, `scripts/`, and `tests/verify-public-tree.py` are
+- `README.md`, `README.ja.md`, `NOTICE`, `CONTRIBUTING.md`, `SECURITY.md`, `.gitignore`,
+  `.github/`, `targets/`, `container/Dockerfile`, `scripts/`, and the Python tests are
   provided under the **MIT License**, except where a file states otherwise.
   The full text is in [`LICENSES/MIT.txt`](LICENSES/MIT.txt).
-- `keys/gnome-keyring-46.1-source-signer.asc` is an unmodified public signing
-  key supplied solely for verifying the documented source package. It is not a
-  private key or an authentication credential.
+- The files under `keys/` are public signing keys supplied solely for verifying
+  the documented source packages. They are not private keys or authentication
+  credentials.
 
 No trademark license is granted. GNOME and Ubuntu names and marks belong to
 their respective owners.

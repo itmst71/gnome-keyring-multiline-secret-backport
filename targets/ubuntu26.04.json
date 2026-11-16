@@ -1,0 +1,20 @@
+{
+  "id": "ubuntu26.04",
+  "suite": "resolute",
+  "os_version": "26.04",
+  "architecture": "amd64",
+  "source_version": "50.0-1",
+  "upstream_version": "50.0",
+  "local_version": "50.0-1ubuntu0.0+local1",
+  "base_image": "ubuntu@sha256:0d5255be560e2d2ddcfbfda88549e9e815ef29e7cd7fc62183d5709e6e2963c6",
+  "snapshot": "20261116T000000Z",
+  "changelog_date": "Mon, 16 Nov 2026 00:00:00 +0000",
+  "source_base": "https://archive.ubuntu.com/ubuntu/pool/main/g/gnome-keyring",
+  "signer_key": "keys/gnome-keyring-50.0-source-signer.asc",
+  "signer_fingerprint": "4724B86F47E02915DEEA49E23EBD44903EDB0496",
+  "files": {
+    "gnome-keyring_50.0.orig.tar.xz": "cbd72062c53c9702bc2c4733991ad5f051ca682882b30905a2829bcf1a8ecc7c",
+    "gnome-keyring_50.0-1.debian.tar.xz": "3367305643b5432068d8a249a47f8e66644365ba539f64c61b40ad994b2aa6c4",
+    "gnome-keyring_50.0-1.dsc": "57692735ec061048145d94e02c8dacd5e4329832022a23c2debc49e5d5d04b93"
+  }
+}

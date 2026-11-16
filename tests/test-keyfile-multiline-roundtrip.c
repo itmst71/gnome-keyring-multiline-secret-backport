@@ -14,6 +14,7 @@ test_multiline_round_trip (void)
 	GKeyFile *reloaded = g_key_file_new ();
 	GError *error = NULL;
 	gchar *serialized;
+	gchar *readback;
 	gsize serialized_length;
 
 #ifdef USE_ESCAPING_WRITER
@@ -29,6 +30,11 @@ test_multiline_round_trip (void)
 	                                           serialized_length,
 	                                           G_KEY_FILE_NONE, &error));
 	g_assert_no_error (error);
+
+	readback = g_key_file_get_string (reloaded, "item", "secret", &error);
+	g_assert_no_error (error);
+	g_assert_cmpstr (readback, ==, "first line\nsecond line\n");
+	g_free (readback);
 
 	g_free (serialized);
 	g_key_file_unref (reloaded);
